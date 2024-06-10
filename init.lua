@@ -1,5 +1,4 @@
 --[[
-
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
@@ -244,6 +243,15 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.cmd 'iabbrev <buffer> note # NOTE(chris.pearce):'
     vim.cmd 'iabbrev <buffer> hack # HACK(chris.pearce):'
     vim.cmd 'iabbrev <buffer> fix # FIX(chris.pearce):'
+  end,
+})
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'lua',
+  callback = function()
+    vim.cmd 'iabbrev <buffer> todo -- TODO(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> note -- NOTE(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> hack -- HACK(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> fix -- FIX(chris.pearce):'
   end,
 })
 

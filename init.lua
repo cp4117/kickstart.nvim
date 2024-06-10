@@ -967,6 +967,109 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>tt', overseer.toggle, { desc = '[T]oggle overseer' })
     end,
   },
+  {
+    -- NOTE(chris.pearce): debug adapter protocol plugin
+    'mfussenegger/nvim-dap',
+
+    config = function()
+      local dap = require 'dap'
+      -- NOTE(chris.pearce): adapter configurations for the debuggers we want to use
+      dap.adapters.lldb = {
+        type = 'executable',
+        command = 'lldb-dap',
+        --command = 'lldb-vscode',
+        name = 'lldb',
+        options = {
+          env = {
+            LLDB_USE_NATIVE_PDB_READER = 1,
+          },
+          detached = false,
+        },
+      }
+
+      dap.adapters.gdb = {
+        type = 'executable',
+        command = os.getenv 'USERPROFILE' .. '/scoop/apps/mingw/current/bin/gdb.exe',
+        name = 'gdb',
+        args = { '-i', 'dap' },
+        options = {},
+      }
+
+      Executable = ''
+      dap.configurations.cpp = {
+        {
+          name = 'debug',
+          type = 'gdb',
+          request = 'launch',
+
+          setupCommands = {
+            {
+              text = '-enable-pretty-printing',
+              description = 'enable pretty printing for types',
+              ignoreFailures = false,
+            },
+          },
+
+          program = function()
+            return (Executable and Executable ~= '') and Executable or dap.ABORT
+          end,
+
+          cwd = function()
+            local folder = vim.fn.fnamemodify(Executable, ':p:h')
+            return folder
+          end,
+
+          args = {},
+          runInTerminal = false,
+        },
+      }
+      dap.configurations.c = dap.configurations.cpp
+      dap.configurations.h = dap.configurations.cpp
+
+      vim.keymap.set('n', '<C-S-F5>', dap.restart, {})
+      vim.keymap.set('n', '<F9>', dap.toggle_breakpoint, {})
+      vim.keymap.set('n', '<F10>', dap.step_over, {})
+      vim.keymap.set('n', '<F11>', dap.step_into, {})
+      vim.keymap.set('n', '<S-F11>', dap.step_out, {})
+      vim.keymap.set('n', '<S-F5>', function()
+        dap.disconnect { terminateDebugee = true }
+      end, {})
+
+      vim.keymap.set('n', '<F5>', function()
+        if dap.session() then
+          dap.continue()
+        else
+          local utils = require 'telescope.utils'
+          local themes = require 'telescope.themes'
+          local builtin = require 'telescope.builtin'
+          local actions = require 'telescope.actions'
+          local state = require 'telescope.actions.state'
+
+          builtin.find_files(themes.get_dropdown {
+            previewer = false,
+            find_command = { 'rg', '--files', '--glob=*.exe' },
+            default_text = utils.transform_path({}, Executable),
+            prompt_title = 'Select executable',
+            attach_mappings = function(_, map)
+              local result = true
+              map({ 'i', 'n' }, '<return>', function(prompt_buffer)
+                local selection = state.get_selected_entry()
+                Executable = selection.path
+                actions.close(prompt_buffer)
+                dap.continue()
+                result = false
+              end)
+              return result
+            end,
+          })
+        end
+      end, {})
+
+      -- Change default breakpoint icons
+      vim.fn.sign_define('DapBreakpoint', { text = '🟥', texthl = '', linehl = '', numhl = '' })
+      vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
+    end,
+  },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and

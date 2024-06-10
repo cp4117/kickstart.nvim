@@ -930,6 +930,43 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
+  -- NOTE(chris.pearce): custom plugins to play around with
+  {
+    -- NOTE(chris.pearce): overseer that can run async tasks such as make etc. and output results to quickfix window
+    'stevearc/overseer.nvim',
+    opts = {},
+    config = function()
+      local overseer = require 'overseer'
+      overseer.setup {
+        task_list = {
+          default_detail = 1,
+        },
+        component_aliases = {
+          default = {
+            { 'display_duration', detail_level = 1 },
+            'on_output_summarize',
+            'on_exit_set_status',
+            'on_complete_notify',
+            'on_complete_dispose',
+            { 'on_output_quickfix', open_on_match = true, items_only = true, set_diagnostics = true },
+            { 'on_result_diagnostics', remove_on_restart = true },
+            { 'on_result_diagnostics_quickfix', set_empty_results = true },
+          },
+        },
+      }
+
+      local runTask = function()
+        overseer.run_template({}, function(task)
+          if task then
+            overseer.run_action(task, 'open float')
+          end
+        end)
+      end
+
+      vim.keymap.set('n', '<leader>tr', runTask, { desc = '[R]un task' })
+      vim.keymap.set('n', '<leader>tt', overseer.toggle, { desc = '[T]oggle overseer' })
+    end,
+  },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and

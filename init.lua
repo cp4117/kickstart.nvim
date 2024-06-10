@@ -227,6 +227,26 @@ vim.keymap.set('n', '<leader>v', function()
   vim.cmd('e ' .. os.getenv 'MYVIMRC')
 end, { desc = 'Edit [V]imrc' })
 
+-- Abbreviations for adding notes, todos etc.
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'cpp',
+  callback = function()
+    vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> hack // HACK(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> fix // FIX(chris.pearce):'
+  end,
+})
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'ps1',
+  callback = function()
+    vim.cmd 'iabbrev <buffer> todo # TODO(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> note # NOTE(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> hack # HACK(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> fix # FIX(chris.pearce):'
+  end,
+})
+
 -- Basic p4 commands (probably can be improved)
 vim.keymap.set('n', '<leader>p4e', function()
   local file = vim.fn.expand '%:p'

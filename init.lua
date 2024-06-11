@@ -83,6 +83,9 @@ I hope you enjoy your Neovim journey,
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
 
+-- Add switch between source/header cpp files
+require 'misc.cpp_header_switch'
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -940,15 +943,17 @@ require('lazy').setup({
       overseer.setup {
         task_list = {
           default_detail = 1,
+          min_height = 15,
         },
         component_aliases = {
           default = {
-            { 'display_duration', detail_level = 1 },
+            'unique',
             'on_output_summarize',
             'on_exit_set_status',
             'on_complete_notify',
             'on_complete_dispose',
-            { 'on_output_quickfix', open_on_match = true, items_only = true, set_diagnostics = true },
+            { 'display_duration', detail_level = 1 },
+            { 'on_output_quickfix', open_on_exit = 'failure', close = true, items_only = true },
             { 'on_result_diagnostics', remove_on_restart = true },
             { 'on_result_diagnostics_quickfix', set_empty_results = true },
           },
@@ -958,7 +963,11 @@ require('lazy').setup({
       local runTask = function()
         overseer.run_template({}, function(task)
           if task then
-            overseer.run_action(task, 'open float')
+            vim.cmd 'ccl'
+            overseer.toggle()
+            task:subscribe('on_complete', function()
+              overseer.toggle()
+            end)
           end
         end)
       end
@@ -981,7 +990,7 @@ require('lazy').setup({
         name = 'lldb',
         options = {
           env = {
-            LLDB_USE_NATIVE_PDB_READER = 1,
+            --LLDB_USE_NATIVE_PDB_READER = 1,
           },
           detached = false,
         },
@@ -992,14 +1001,16 @@ require('lazy').setup({
         command = os.getenv 'USERPROFILE' .. '/scoop/apps/mingw/current/bin/gdb.exe',
         name = 'gdb',
         args = { '-i', 'dap' },
-        options = {},
+        options = {
+          detached = false,
+        },
       }
 
       Executable = ''
       dap.configurations.cpp = {
         {
           name = 'debug',
-          type = 'gdb',
+          type = 'lldb',
           request = 'launch',
 
           setupCommands = {
@@ -1069,6 +1080,47 @@ require('lazy').setup({
       vim.fn.sign_define('DapBreakpoint', { text = '🟥', texthl = '', linehl = '', numhl = '' })
       vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
     end,
+  },
+  {
+    -- NOTE(chris.pearce): UI integration for dap
+    'rcarriga/nvim-dap-ui',
+    dependencies = {
+      'mfussenegger/nvim-dap',
+      'nvim-neotest/nvim-nio',
+    },
+    config = function()
+      local dap = require 'dap'
+      local dapui = require 'dapui'
+
+      dap.listeners.before.attach.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.launch.dapui_config = function()
+        dapui.open()
+      end
+      dap.listeners.before.event_terminated.dapui_config = function()
+        dapui.close()
+      end
+      dap.listeners.before.event_exited.dapui_config = function()
+        dapui.close()
+      end
+      dap.listeners.before.terminate.dapui_config = function()
+        dapui.close()
+      end
+    end,
+  },
+  {
+    'iamcco/markdown-preview.nvim',
+    cmd = {
+      'MarkdownPreviewToggle',
+      'MarkdownPreview',
+      'MarkdownPreviewStop',
+    },
+    build = 'cd app && yarn install',
+    init = function()
+      vim.g.mkdp_filetypes = { 'markdown' }
+    end,
+    ft = { 'markdown' },
   },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the

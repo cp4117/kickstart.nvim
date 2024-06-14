@@ -165,7 +165,7 @@ vim.opt.scrolloff = 10
 -- Tab settings
 vim.opt.tabstop = 4
 vim.opt.shiftwidth = 4
-vim.opt.expandtab = false
+vim.opt.expandtab = true
 vim.opt.smarttab = true
 
 -- Make cmd window slightly higher
@@ -423,6 +423,23 @@ require('lazy').setup({
         --   },
         -- },
         -- pickers = {}
+        defaults = {
+          file_ignore_patterns = {
+            '%.obj',
+            '%.pdb',
+            '%.png',
+            '%.dds',
+            '%.bmp',
+            '%.dll',
+            '%.so',
+            '%.out',
+            '%.pyc',
+            '%.zip',
+            '%.bin',
+            '%.docx',
+            '%.pdf',
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -1110,6 +1127,7 @@ require('lazy').setup({
     end,
   },
   {
+    -- NOTE(chris.pearce): Live previews of markdown files
     'iamcco/markdown-preview.nvim',
     cmd = {
       'MarkdownPreviewToggle',
@@ -1122,7 +1140,6 @@ require('lazy').setup({
     end,
     ft = { 'markdown' },
   },
-
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.

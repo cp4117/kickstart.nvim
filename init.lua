@@ -97,6 +97,7 @@ vim.g.have_nerd_font = true
 
 -- Perforce global settings
 vim.g.perforce_open_on_change = 1
+--vim.g.perforce_open_on_save = 1
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -235,6 +236,15 @@ end, { desc = 'Edit [V]imrc' })
 -- Abbreviations for adding notes, todos etc.
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'cpp',
+  callback = function()
+    vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> hack // HACK(chris.pearce):'
+    vim.cmd 'iabbrev <buffer> fix // FIX(chris.pearce):'
+  end,
+})
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'js',
   callback = function()
     vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
     vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'
@@ -999,6 +1009,9 @@ require('lazy').setup({
   {
     -- NOTE(chris.pearce): debug adapter protocol plugin
     'mfussenegger/nvim-dap',
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+    },
 
     config = function()
       local dap = require 'dap'
@@ -1006,21 +1019,30 @@ require('lazy').setup({
       dap.adapters.lldb = {
         type = 'executable',
         command = 'lldb-dap',
-        --command = 'lldb-vscode',
         name = 'lldb',
         options = {
-          env = {
-            --LLDB_USE_NATIVE_PDB_READER = 1,
-          },
           detached = false,
         },
       }
 
+      -- TODO(chris.pearce): Cannot seem to get the native gdb plugin to work which would be ideal as we wouldn't need a vscode install
+      --                     and the c++ debugger extensions to get a working version
       dap.adapters.gdb = {
         type = 'executable',
-        command = os.getenv 'USERPROFILE' .. '/scoop/apps/mingw/current/bin/gdb.exe',
-        name = 'gdb',
+        command = 'gdb',
         args = { '-i', 'dap' },
+        options = {
+          detached = false,
+        },
+      }
+
+      -- NOTE(chris.pearce): Only way this appears to work and to get our vector information correct is to remove /DEBUG:FULL switch we
+      --                     were using in clang and to remove -gcodeview switch as gdb doesn't understand the codeview format
+      dap.adapters.cppdbg = {
+        id = 'cppdbg',
+        type = 'executable',
+        command = 'C:\\Users\\chris.pearce\\scoop\\persist\\vscode\\data\\extensions\\ms-vscode.cpptools-1.20.5-win32-x64\\debugAdapters\\bin\\OpenDebugAD7.exe',
+        args = {},
         options = {
           detached = false,
         },
@@ -1030,13 +1052,13 @@ require('lazy').setup({
       dap.configurations.cpp = {
         {
           name = 'debug',
-          type = 'lldb',
+          type = 'cppdbg',
           request = 'launch',
 
           setupCommands = {
             {
               text = '-enable-pretty-printing',
-              description = 'enable pretty printing for types',
+              description = 'enable pretty printing',
               ignoreFailures = false,
             },
           },
@@ -1111,6 +1133,7 @@ require('lazy').setup({
     config = function()
       local dap = require 'dap'
       local dapui = require 'dapui'
+      dapui.setup {}
 
       dap.listeners.before.attach.dapui_config = function()
         dapui.open()
@@ -1122,9 +1145,6 @@ require('lazy').setup({
         dapui.close()
       end
       dap.listeners.before.event_exited.dapui_config = function()
-        dapui.close()
-      end
-      dap.listeners.before.terminate.dapui_config = function()
         dapui.close()
       end
     end,

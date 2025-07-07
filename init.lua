@@ -1,8 +1,5 @@
--- Add switch between source/header cpp files
-require 'misc.cpp_header_switch'
-
 -- Disable diagnostics for now as the unity build type generates too much visual noise
-vim.diagnostic.disable()
+--vim.diagnostic.disable()
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -10,6 +7,10 @@ vim.diagnostic.disable()
 --  NOTE: Assigning leader to space so we don't conflict with , and ; searches
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+
+-- Add switch between source/header cpp files
+require 'misc.cpp_header_switch'
+require 'misc.abbreviations'
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -130,7 +131,7 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
-vim.keymap.set('n', '<leader>cf', '<cmd>%!clang-format<CR>', { desc = 'Apply clang format' })
+--vim.keymap.set('n', '<leader>cf', '<cmd>%!clang-format<CR>', { desc = 'Apply clang format' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -153,44 +154,6 @@ vim.o.colorcolumn = '140'
 vim.keymap.set('n', '<leader>v', function()
   vim.cmd('e ' .. os.getenv 'MYVIMRC')
 end, { desc = 'Edit [V]imrc' })
-
--- Abbreviations for adding notes, todos etc.
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'cpp',
-  callback = function()
-    vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> hack // HACK(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> fix // FIX(chris.pearce):'
-  end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'js',
-  callback = function()
-    vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> hack // HACK(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> fix // FIX(chris.pearce):'
-  end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'ps1',
-  callback = function()
-    vim.cmd 'iabbrev <buffer> todo # TODO(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> note # NOTE(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> hack # HACK(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> fix # FIX(chris.pearce):'
-  end,
-})
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'lua',
-  callback = function()
-    vim.cmd 'iabbrev <buffer> todo -- TODO(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> note -- NOTE(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> hack -- HACK(chris.pearce):'
-    vim.cmd 'iabbrev <buffer> fix -- FIX(chris.pearce):'
-  end,
-})
 
 -- Basic p4 commands (probably can be improved)
 vim.keymap.set('n', '<leader>p4e', function()
@@ -282,44 +245,6 @@ require('lazy').setup({
   -- Then, because we use the `config` key, the configuration only runs
   -- after the plugin has been loaded:
   --  config = function() ... end
-
-  { -- Useful plugin to show you pending keybinds.
-    'folke/which-key.nvim',
-    event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    config = function() -- This is the function that runs, AFTER loading
-      local wk = require 'which-key'
-      wk.setup()
-
-      -- Document existing key chains
-      --[[
-      require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-        ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-        ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
-      }
-      -- visual mode
-      require('which-key').register {
-        { '<leader>h', desc = 'Git [H]unk', mode = 'v' },
-      }
-      --]]
-      wk.add {
-        { '<leader>c', desc = '[C]ode' },
-        { '<leader>d', desc = '[D]ocument' },
-        { '<leader>r', desc = '[R]ename' },
-        { '<leader>s', desc = '[S]earch' },
-        { '<leader>w', desc = '[W]orkspace' },
-        { '<leader>t', desc = '[T]oggle' },
-        {
-          mode = { 'n', 'v' },
-          { '<leader>h', desc = 'Git [H]unk' },
-        },
-      }
-    end,
-  },
 
   -- NOTE: Plugins can specify dependencies.
   --
@@ -621,7 +546,10 @@ require('lazy').setup({
         -- tsserver = {},
         --
         clangd = {
-          cmd = { 'clangd', '--background-index', '--clang-tidy' },
+          cmd = { 'clangd', '--background-index', '--clang-tidy', '--log=verbose' },
+          init_options = {
+            fallbackFlags = { '-std=c++17' },
+          },
         },
 
         lua_ls = {
@@ -630,11 +558,20 @@ require('lazy').setup({
           -- capabilities = {},
           settings = {
             Lua = {
+              runtime = {
+                version = 'LuaJIT',
+              },
               completion = {
                 callSnippet = 'Replace',
               },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
+              diagnostics = {
+                globals = {
+                  'vim',
+                  'require',
+                },
+              },
             },
           },
         },
@@ -764,9 +701,9 @@ require('lazy').setup({
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
         mapping = cmp.mapping.preset.insert {
           -- Select the [n]ext item
-          ['<C-n>'] = cmp.mapping.select_next_item(),
+          --['<C-n>'] = cmp.mapping.select_next_item(),
           -- Select the [p]revious item
-          ['<C-p>'] = cmp.mapping.select_prev_item(),
+          --['<C-p>'] = cmp.mapping.select_prev_item(),
 
           -- Scroll the documentation window [b]ack / [f]orward
           ['<C-b>'] = cmp.mapping.scroll_docs(-4),
@@ -926,277 +863,6 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
-  -- NOTE(chris.pearce): custom plugins to play around with
-  {
-    -- NOTE(chris.pearce): overseer that can run async tasks such as make etc. and output results to quickfix window
-    'stevearc/overseer.nvim',
-    opts = {},
-    config = function()
-      local overseer = require 'overseer'
-      overseer.setup {
-        task_list = {
-          default_detail = 1,
-          min_height = 15,
-        },
-        component_aliases = {
-          default = {
-            'unique',
-            'on_output_summarize',
-            'on_exit_set_status',
-            'on_complete_notify',
-            'on_complete_dispose',
-            { 'display_duration', detail_level = 1 },
-            { 'on_output_quickfix', open_on_exit = 'failure', close = true, items_only = true },
-            { 'on_result_diagnostics', remove_on_restart = true },
-            { 'on_result_diagnostics_quickfix', set_empty_results = true },
-          },
-        },
-      }
-
-      local runTask = function()
-        overseer.run_template({ cwd = vim.loop.cwd() }, function(task)
-          if task then
-            vim.cmd 'ccl'
-            overseer.toggle()
-            task:subscribe('on_complete', function()
-              overseer.toggle()
-            end)
-          end
-        end)
-      end
-
-      vim.keymap.set('n', '<leader>tr', runTask, { desc = '[R]un task' })
-      vim.keymap.set('n', '<leader>tt', overseer.toggle, { desc = '[T]oggle overseer' })
-    end,
-  },
-  {
-    -- NOTE(chris.pearce): debug adapter protocol plugin
-    'mfussenegger/nvim-dap',
-    dependencies = {
-      'rcarriga/nvim-dap-ui',
-    },
-
-    config = function()
-      local dap = require 'dap'
-      -- NOTE(chris.pearce): adapter configurations for the debuggers we want to use
-      dap.adapters.lldb = {
-        type = 'executable',
-        command = 'lldb-dap',
-        name = 'lldb',
-        options = {
-          detached = false,
-        },
-      }
-
-      -- TODO(chris.pearce): Cannot seem to get the native gdb plugin to work which would be ideal as we wouldn't need a vscode install
-      --                     and the c++ debugger extensions to get a working version
-      dap.adapters.gdb = {
-        type = 'executable',
-        command = 'gdb',
-        args = { '-i', 'dap' },
-        options = {
-          detached = false,
-        },
-      }
-
-      -- NOTE(chris.pearce): Only way this appears to work and to get our vector information correct is to remove /DEBUG:FULL switch we
-      --                     were using in clang and to remove -gcodeview switch as gdb doesn't understand the codeview format
-      dap.adapters.cppdbg = {
-        id = 'cppdbg',
-        type = 'executable',
-        command = 'C:\\Users\\chris.pearce\\scoop\\persist\\vscode\\data\\extensions\\ms-vscode.cpptools-1.21.4-win32-x64\\debugAdapters\\bin\\OpenDebugAD7.exe',
-        args = {},
-        options = {
-          detached = false,
-        },
-      }
-
-      Args = ''
-      Executable = ''
-
-      dap.configurations.cpp = {
-        {
-          name = 'debug',
-          type = 'lldb',
-          request = 'launch',
-
-          setupCommands = {
-            {
-              text = '-enable-pretty-printing',
-              description = 'enable pretty printing',
-              ignoreFailures = false,
-            },
-          },
-
-          program = function()
-            return (Executable and Executable ~= '') and Executable or dap.ABORT
-          end,
-
-          cwd = function()
-            local folder = vim.fn.fnamemodify(Executable, ':p:h')
-            return folder
-          end,
-
-          args = function()
-            Args = vim.fn.input {
-              prompt = 'args: ',
-              default = Args,
-            }
-            local result = {}
-            for arg in string.gmatch(Args, '%S+') do
-              table.insert(result, arg)
-            end
-            return result
-          end,
-
-          runInTerminal = false,
-        },
-        {
-          name = 'attach',
-          type = 'lldb',
-          request = 'attach',
-          pid = require('dap.utils').pick_process,
-          runInTerminal = false,
-        },
-      }
-      dap.configurations.c = dap.configurations.cpp
-      dap.configurations.h = dap.configurations.cpp
-
-      local dapui = require 'dapui'
-      vim.keymap.set('n', '<C-S-F5>', dap.restart, {})
-      vim.keymap.set('n', '<F9>', dap.toggle_breakpoint, {})
-      vim.keymap.set('n', '<F10>', dap.step_over, {})
-      vim.keymap.set('n', '<F11>', dap.step_into, {})
-      vim.keymap.set('n', '<S-F11>', dap.step_out, {})
-      vim.keymap.set('n', '<S-F5>', function()
-        if dap.session() then
-          dap.disconnect()
-          dapui.toggle()
-        end
-      end, {})
-
-      vim.keymap.set('n', '<F5>', function()
-        if dap.session() then
-          dap.continue()
-        else
-          local utils = require 'telescope.utils'
-          local themes = require 'telescope.themes'
-          local builtin = require 'telescope.builtin'
-          local actions = require 'telescope.actions'
-          local state = require 'telescope.actions.state'
-
-          builtin.find_files(themes.get_dropdown {
-            previewer = false,
-            find_command = { 'rg', '--files', '--glob=*.exe' },
-            default_text = utils.transform_path({}, Executable),
-            prompt_title = 'Select executable',
-            attach_mappings = function(_, map)
-              local result = true
-              map({ 'i', 'n' }, '<return>', function(prompt_buffer)
-                local selection = state.get_selected_entry()
-                Executable = selection.path
-                actions.close(prompt_buffer)
-                dap.continue()
-                result = false
-              end)
-              return result
-            end,
-          })
-        end
-      end, {})
-
-      vim.keymap.set('n', '<leader>a', function()
-        dap.continue()
-      end, {})
-
-      -- Change default breakpoint icons
-      vim.fn.sign_define('DapBreakpoint', { text = '🟥', texthl = '', linehl = '', numhl = '' })
-      vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
-    end,
-  },
-  {
-    -- NOTE(chris.pearce): UI integration for dap
-    'rcarriga/nvim-dap-ui',
-    dependencies = {
-      'mfussenegger/nvim-dap',
-      'nvim-neotest/nvim-nio',
-    },
-    config = function()
-      local dap = require 'dap'
-      local dapui = require 'dapui'
-      dapui.setup {
-        layouts = {
-          {
-            elements = {
-              {
-                id = 'scopes',
-                size = 0.25,
-              },
-              {
-                id = 'breakpoints',
-                size = 0.25,
-              },
-              {
-                id = 'stacks',
-                size = 0.25,
-              },
-              {
-                id = 'watches',
-                size = 0.25,
-              },
-            },
-            size = 0.25,
-            position = 'right',
-          },
-          {
-            elements = {
-              {
-                id = 'repl',
-                size = 0.5,
-              },
-              {
-                id = 'console',
-                size = 0.5,
-              },
-            },
-            size = 0.25,
-            position = 'bottom',
-          },
-        },
-      }
-
-      dap.listeners.before.attach.dapui_config = function()
-        dapui.open()
-      end
-      dap.listeners.before.launch.dapui_config = function()
-        dapui.open()
-      end
-      dap.listeners.before.event_terminated.dapui_config = function()
-        dapui.close()
-      end
-      dap.listeners.before.event_exited.dapui_config = function()
-        dapui.close()
-      end
-    end,
-  },
-  {
-    -- NOTE(chris.pearce): Live previews of markdown files
-    'iamcco/markdown-preview.nvim',
-    cmd = {
-      'MarkdownPreviewToggle',
-      'MarkdownPreview',
-      'MarkdownPreviewStop',
-    },
-    build = 'cd app && yarn install',
-    init = function()
-      vim.g.mkdp_filetypes = { 'markdown' }
-    end,
-    ft = { 'markdown' },
-  },
-  {
-    -- NOTE(chris.pearce): perforce plug in
-    'nfvs/vim-perforce',
-  },
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -1206,7 +872,7 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
@@ -1218,7 +884,7 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the

@@ -1,96 +1,15 @@
---[[
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Add switch between source/header cpp files
 require 'misc.cpp_header_switch'
+
+-- Disable diagnostics for now as the unity build type generates too much visual noise
+vim.diagnostic.disable()
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-vim.g.mapleader = ','
-vim.g.maplocalleader = ','
+--  NOTE: Assigning leader to space so we don't conflict with , and ; searches
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
@@ -211,6 +130,8 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+vim.keymap.set('n', '<leader>cf', '<cmd>%!clang-format<CR>', { desc = 'Apply clang format' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -280,6 +201,18 @@ end, { desc = 'Perforce edit file' })
 vim.keymap.set('n', '<leader>p4o', function()
   vim.cmd '!p4 opened'
 end, { desc = 'Perforce open files' })
+
+-- Format source files with clang-format on write
+--vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
+--desc = 'clang-format cpp/h files on write',
+--pattern = { '*.c', '*.h', '*.cpp', '*.hpp' },
+-- TODO(chris.pearce): Check that a clang-tidy file exists before trying to clang-tidy?
+--callback = function()
+--local cursor = vim.api.nvim_win_get_cursor(0)
+--vim.cmd '%!clang-format'
+--vim.api.nvim_win_set_cursor(0, cursor)
+--end,
+--})
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -354,9 +287,11 @@ require('lazy').setup({
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     config = function() -- This is the function that runs, AFTER loading
-      require('which-key').setup()
+      local wk = require 'which-key'
+      wk.setup()
 
       -- Document existing key chains
+      --[[
       require('which-key').register {
         ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
         ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
@@ -367,9 +302,22 @@ require('lazy').setup({
         ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
       }
       -- visual mode
-      require('which-key').register({
-        ['<leader>h'] = { 'Git [H]unk' },
-      }, { mode = 'v' })
+      require('which-key').register {
+        { '<leader>h', desc = 'Git [H]unk', mode = 'v' },
+      }
+      --]]
+      wk.add {
+        { '<leader>c', desc = '[C]ode' },
+        { '<leader>d', desc = '[D]ocument' },
+        { '<leader>r', desc = '[R]ename' },
+        { '<leader>s', desc = '[S]earch' },
+        { '<leader>w', desc = '[W]orkspace' },
+        { '<leader>t', desc = '[T]oggle' },
+        {
+          mode = { 'n', 'v' },
+          { '<leader>h', desc = 'Git [H]unk' },
+        },
+      }
     end,
   },
 
@@ -438,6 +386,7 @@ require('lazy').setup({
         -- pickers = {}
         defaults = {
           file_ignore_patterns = {
+            'node_modules\\',
             '%.obj',
             '%.pdb',
             '%.png',
@@ -672,7 +621,7 @@ require('lazy').setup({
         -- tsserver = {},
         --
         clangd = {
-          cmd = { 'clangd', '--background-index' },
+          cmd = { 'clangd', '--background-index', '--clang-tidy' },
         },
 
         lua_ls = {
@@ -1005,7 +954,7 @@ require('lazy').setup({
       }
 
       local runTask = function()
-        overseer.run_template({}, function(task)
+        overseer.run_template({ cwd = vim.loop.cwd() }, function(task)
           if task then
             vim.cmd 'ccl'
             overseer.toggle()
@@ -1055,18 +1004,20 @@ require('lazy').setup({
       dap.adapters.cppdbg = {
         id = 'cppdbg',
         type = 'executable',
-        command = 'C:\\Users\\chris.pearce\\scoop\\persist\\vscode\\data\\extensions\\ms-vscode.cpptools-1.20.5-win32-x64\\debugAdapters\\bin\\OpenDebugAD7.exe',
+        command = 'C:\\Users\\chris.pearce\\scoop\\persist\\vscode\\data\\extensions\\ms-vscode.cpptools-1.21.4-win32-x64\\debugAdapters\\bin\\OpenDebugAD7.exe',
         args = {},
         options = {
           detached = false,
         },
       }
 
+      Args = ''
       Executable = ''
+
       dap.configurations.cpp = {
         {
           name = 'debug',
-          type = 'cppdbg',
+          type = 'lldb',
           request = 'launch',
 
           setupCommands = {
@@ -1086,20 +1037,42 @@ require('lazy').setup({
             return folder
           end,
 
-          args = {},
+          args = function()
+            Args = vim.fn.input {
+              prompt = 'args: ',
+              default = Args,
+            }
+            local result = {}
+            for arg in string.gmatch(Args, '%S+') do
+              table.insert(result, arg)
+            end
+            return result
+          end,
+
+          runInTerminal = false,
+        },
+        {
+          name = 'attach',
+          type = 'lldb',
+          request = 'attach',
+          pid = require('dap.utils').pick_process,
           runInTerminal = false,
         },
       }
       dap.configurations.c = dap.configurations.cpp
       dap.configurations.h = dap.configurations.cpp
 
+      local dapui = require 'dapui'
       vim.keymap.set('n', '<C-S-F5>', dap.restart, {})
       vim.keymap.set('n', '<F9>', dap.toggle_breakpoint, {})
       vim.keymap.set('n', '<F10>', dap.step_over, {})
       vim.keymap.set('n', '<F11>', dap.step_into, {})
       vim.keymap.set('n', '<S-F11>', dap.step_out, {})
       vim.keymap.set('n', '<S-F5>', function()
-        dap.disconnect { terminateDebugee = true }
+        if dap.session() then
+          dap.disconnect()
+          dapui.toggle()
+        end
       end, {})
 
       vim.keymap.set('n', '<F5>', function()
@@ -1132,6 +1105,10 @@ require('lazy').setup({
         end
       end, {})
 
+      vim.keymap.set('n', '<leader>a', function()
+        dap.continue()
+      end, {})
+
       -- Change default breakpoint icons
       vim.fn.sign_define('DapBreakpoint', { text = '🟥', texthl = '', linehl = '', numhl = '' })
       vim.fn.sign_define('DapStopped', { text = '▶️', texthl = '', linehl = '', numhl = '' })
@@ -1147,7 +1124,46 @@ require('lazy').setup({
     config = function()
       local dap = require 'dap'
       local dapui = require 'dapui'
-      dapui.setup {}
+      dapui.setup {
+        layouts = {
+          {
+            elements = {
+              {
+                id = 'scopes',
+                size = 0.25,
+              },
+              {
+                id = 'breakpoints',
+                size = 0.25,
+              },
+              {
+                id = 'stacks',
+                size = 0.25,
+              },
+              {
+                id = 'watches',
+                size = 0.25,
+              },
+            },
+            size = 0.25,
+            position = 'right',
+          },
+          {
+            elements = {
+              {
+                id = 'repl',
+                size = 0.5,
+              },
+              {
+                id = 'console',
+                size = 0.5,
+              },
+            },
+            size = 0.25,
+            position = 'bottom',
+          },
+        },
+      }
 
       dap.listeners.before.attach.dapui_config = function()
         dapui.open()

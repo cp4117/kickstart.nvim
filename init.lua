@@ -1,6 +1,3 @@
--- Disable diagnostics for now as the unity build type generates too much visual noise
---vim.diagnostic.disable()
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -17,7 +14,6 @@ vim.g.have_nerd_font = true
 
 -- Perforce global settings
 vim.g.perforce_open_on_change = 1
---vim.g.perforce_open_on_save = 1
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`

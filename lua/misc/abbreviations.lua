@@ -2,7 +2,7 @@
 -- common abbreviations to add different styled comments to a file depending on the file type
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { '*.cpp', '*.js', '*.h', '*.hpp' },
+  pattern = { 'cpp', 'js', 'h', 'hpp' },
   callback = function()
     vim.cmd 'iabbrev <buffer> todo // TODO(chris.pearce):'
     vim.cmd 'iabbrev <buffer> note // NOTE(chris.pearce):'

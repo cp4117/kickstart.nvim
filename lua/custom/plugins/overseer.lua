@@ -22,6 +22,23 @@ return {
           { 'on_output_quickfix', open_on_exit = 'failure', close = true, items_only = true },
           { 'on_result_diagnostics', remove_on_restart = true },
           { 'on_result_diagnostics_quickfix', set_empty_results = true },
+          {
+            -- TODO(chris.pearce): if we're to use this in home projects we need to remove the workspace part as this
+            -- is specific to our docker builds
+            'on_output_parse',
+            parser = {
+              diagnostics = {
+                {
+                  'extract',
+                  '^/workspace/([^:]+.cpp):([0-9]+):([0-9]+):(.*)',
+                  'filename',
+                  'lnum',
+                  'col',
+                  'text',
+                },
+              },
+            },
+          },
         },
       },
     }

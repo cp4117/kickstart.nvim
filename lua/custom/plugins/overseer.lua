@@ -44,7 +44,7 @@ return {
     }
 
     local runTask = function()
-      overseer.run_template({ cwd = vim.loop.cwd() }, function(task)
+      overseer.run_task({ cwd = vim.loop.cwd() }, function(task)
         if task then
           vim.cmd 'ccl'
           overseer.toggle()

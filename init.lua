@@ -644,8 +644,7 @@ require('lazy').setup({
         },
       }
     end,
-  },,
-
+  },
   { -- Autoformat
     'stevearc/conform.nvim',
     lazy = false,
